@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sakura 8 bits</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fdf3f6;--ink:#4a2f26;--btn:#ff8fb8;--btn-ink:#3b1f2b;--frame:#4a2f26;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#150d1c;--ink:#ffd6e6;--btn:#ff8fb8;--btn-ink:#2a1020;--frame:#ffd6e6}}
+:root[data-theme="dark"]{--bg:#150d1c;--ink:#ffd6e6;--btn:#ff8fb8;--btn-ink:#2a1020;--frame:#ffd6e6}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:'Press Start 2P',monospace,system-ui;display:flex;flex-direction:column;align-items:center;gap:14px;padding:16px 10px 24px}
+h1{font-size:clamp(12px,3.2vw,22px);margin:6px 0 0;text-align:center;line-height:1.5}
+.frame{width:min(100%,1000px);border:6px solid var(--frame);box-shadow:6px 6px 0 var(--btn);background:#000;line-height:0}
+canvas{touch-action:manipulation;-webkit-tap-highlight-color:transparent;width:100%;aspect-ratio:16/9;image-rendering:pixelated;image-rendering:crisp-edges;cursor:pointer}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;min-height:44px;font:inherit;font-size:11px;padding:10px 14px;background:var(--btn);color:var(--btn-ink);border:3px solid var(--frame);box-shadow:3px 3px 0 var(--frame);cursor:pointer}
+button:active{transform:translate(3px,3px);box-shadow:none}
+button:focus-visible{outline:3px dashed var(--ink);outline-offset:3px}
+p{font-size:9px;line-height:1.8;margin:0;text-align:center}
+#intro{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;background:#46aeea;color:#fff;text-align:center;padding:env(safe-area-inset-top,0px) 16px env(safe-area-inset-bottom,0px);transition:transform .7s steps(8,end)}
+#intro.out{transform:translateY(-100%)}
+#ic{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;image-rendering:pixelated;image-rendering:crisp-edges;z-index:-1}
+#intro h2{font-size:clamp(24px,8vw,64px);margin:0;line-height:1.3;text-shadow:4px 4px 0 #e0558f,8px 8px 0 #2a4a7a}
+#intro .sub{font-size:clamp(9px,2.4vw,14px);line-height:1.8;color:#fff;text-shadow:2px 2px 0 #2a4a7a;margin:0}
+#go{font-size:clamp(11px,3vw,16px);padding:14px 20px;background:#ff8fb8;color:#2a1020;border:4px solid #fff;box-shadow:4px 4px 0 #b84f90;animation:blink 1s steps(2,start) infinite}
+@keyframes blink{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){#go{animation:none}#intro{transition:none}}
+</style>
+</head>
+<body>
+<div id="intro"><canvas id="ic" width="96" height="54" aria-hidden="true"></canvas><h2>PARA USTED</h2><button id="go" autofocus>▶ PULSA START</button></div>
+<script>document.getElementById('go').addEventListener('click',function(){var i=document.getElementById('intro');i.classList.add('out');setTimeout(function(){i.style.display='none'},750);try{var m=document.getElementById('mus');if(m)m.click()}catch(e){}});</script>
+<h1>SAKURA FIELD</h1>
+<div class="frame"><canvas id="c" width="192" height="108" aria-label="Paisaje 8 bits: monte Fuji y un cerezo en flor con pétalos cayendo"></canvas></div>
+<div class="row">
+<button id="mus">♪ MÚSICA: NO</button>
+<button id="gust">VIENTO</button>
+</div>
+<p>Toca la escena para soplar el viento</p>
+<script>
+const cv=document.getElementById('c'),ctx=cv.getContext('2d'),W=192,H=108;
+const R=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(x,y,w,h)};
+const hash=(x,y)=>{let h=Math.sin(x*127.1+y*311.7)*43758.5453;return h-Math.floor(h)};
+// ---------- capa estática ----------
+const bg=document.createElement('canvas');bg.width=W;bg.height=H;
+(function(){
+const g=bg.getContext('2d');const P=(x,y,c)=>{g.fillStyle=c;g.fillRect(x,y,1,1)};
+// cielo con bandas dither
+const sky=['#2f9fe6','#46aeea','#62bdee','#80cdf2','#9ad9f5'];
+for(let y=0;y<84;y++)for(let x=0;x<W;x++){
+ const t=y/84*4.2,i=Math.floor(t),f=t-i;
+ const k=Math.min(4,i+((x+y)%2===0&&f>.5||(f>.8)?1:0));P(x,y,sky[k]);}
+// monte Fuji
+const cx=58,py=40;
+const top=x=>py+Math.pow(Math.abs(x-cx),1.08)*(x<cx?.62:.42)+Math.sin(x*.9)*.8;
+for(let x=0;x<150;x++){const t0=Math.floor(top(x));
+ for(let y=Math.max(t0,0);y<86;y++){
+  const d=y-t0,snowLine=17+Math.sin(x*.55)*4+Math.sin(x*1.7)*2;
+  let c;
+  if(d<snowLine){c=(x<cx-6&&hash(x,y)>.35)||(x>=cx-6&&(x+y)%7<2&&d>snowLine*.5)?'#c6d9f0':'#ffffff'; if(x>cx+4&&d>6&&(x*3+y)%9<2)c='#c6d9f0';}
+  else{const sh=x<cx?(x<cx-26?'#5a7fae':'#6d8fb8'):'#7ea3cb';c=sh;
+   if((x+y*2)%11<2)c=x<cx?'#4a6c9c':'#6d8fb8'; if(d>30&&y>66)c='#9bbbd9'; if(y>76)c='#a9c8e0';}
+  P(x,y,c);}}
+// lomas lejanas y bosque
+for(let x=0;x<W;x++){const h=Math.floor(2+Math.sin(x*.07)*1.5);for(let y=80-h;y<86;y++)P(x,y,y>82?'#7cc47a':'#8fb9c9');}
+for(let x=100;x<W;x++){const h=3+Math.floor(hash(x,1)*6*(x>150?.3:1));for(let y=84-h;y<86;y++)P(x,y,hash(x,y)>.5?'#2f8f56':'#46a86a');
+ if(x%7===0)for(let k=0;k<6;k++)P(x+(k>3?0:0),84-h-k,'#2f8f56');}
+// pueblo
+for(let x=8;x<104;x+=3+Math.floor(hash(x,9)*3)){const w=2+Math.floor(hash(x,4)*3);R(x,83,w,1,hash(x,5)>.5?'#e8eef6':'#c9d4e6');R(x,84,w,1,'#b5655a');}
+// pradera
+const gc=['#8fdc5a','#a8e86c','#7dd152','#b9f07e'];
+for(let y=86;y<H;y++)for(let x=0;x<W;x++){const r=hash(x,y);let c=gc[(r*4)|0];if(y<91&&(x+y)%2)c='#a8e86c';if(y>98&&r>.6)c='#6ccb4a';P(x,y,c);}
+for(let i=0;i<40;i++){const x=(hash(i,2)*W)|0,y=88+(hash(i,3)*18)|0;P(x,y,['#ffffff','#ffe27a','#ffb3d1'][i%3]);}
+// sombra del árbol y camino
+for(let y=100;y<H;y++)for(let x=112;x<W;x++){const dx=(x-152)/46,dy=(y-107)/7;if(dx*dx+dy*dy<1&&hash(x,y)>.15)P(x,y,'#4fb04a');}
+for(let y=102;y<H;y++)for(let x=118;x<142;x++){if(hash(x,y)>.45&&Math.abs(x-(130+(y-102)*1.5))<5)P(x,y,hash(x,y)>.8?'#a8704f':'#c98f6a');}
+// ramas
+const line=(x0,y0,x1,y1,w)=>{const n=Math.max(Math.abs(x1-x0),Math.abs(y1-y0));for(let i=0;i<=n;i++){const x=Math.round(x0+(x1-x0)*i/n),y=Math.round(y0+(y1-y0)*i/n);for(let k=0;k<w;k++)P(x,y+k,k===0?'#7a5238':'#4a2f26');}};
+line(161,60,140,42,2);line(140,42,122,38,1);line(140,42,132,28,1);line(122,38,104,34,1);line(161,58,178,44,2);line(178,44,190,36,1);line(168,50,150,52,1);line(150,52,138,50,1);line(160,56,150,30,1);line(176,46,176,28,1);
+// tronco
+for(let y=56;y<H;y++){const w=7+(y-56)*.28+(y>101?(y-101)*1.6:0),c=160+(y-56)*.1,l=Math.round(c-w/2),r=Math.round(c+w/2);
+ for(let x=l;x<r;x++){const u=(x-l)/(r-l);let col=u<.3?'#4a2f26':u<.7?'#6b4630':'#8a6a48';if(hash(x,Math.floor(y/2))>.8)col=u<.5?'#3a231c':'#7a5238';if(u>.35&&u<.7&&y>76&&y<100&&hash(x,y)>.6)col='#b08a5a';P(x,y,col);}}
+})();
+// ---------- copa del cerezo ----------
+const circ=[[150,12,36],[120,17,24],[95,28,17],[80,35,11],[133,40,19],[172,28,26],[110,40,13],[187,52,15],[150,46,15],[76,29,9],[188,12,18],[160,36,18],[100,20,14],[125,52,10],[168,56,12],[142,26,16],[182,38,14],[90,40,8],[115,30,12],[175,14,14],[135,58,12],[118,56,9],[148,64,9],[100,48,9],[184,64,9]];
+const pink=['#ff9fc4','#ffb6d3','#ffc9de','#ffdbe9','#ff82b0'];
+const bl=[];
+for(let y=0;y<72;y++)for(let x=62;x<W;x++){
+ let inside=false;for(const [cx,cy,r] of circ){const d=(x-cx)**2+(y-cy)**2,rr=r*(.78+.38*hash(x>>1,y>>1));if(d<rr*rr){inside=true;break}}
+ if(!inside)continue; if(hash(x+9,y+4)>.96&&y>20)continue;
+ const hh=hash(x,y*3),shade=y<20?.35:y>40?.1:.25;
+ let ci=hh<shade?3:hh<.55?2:hh<.82?1:0; if(hh>.94)ci=4;
+ bl.push({x,y,ci,ph:hash(x,y)*6.28});}
+// ---------- pétalos ----------
+const petals=[],carpet=[];const mk=(init)=>({x:70+Math.random()*122,y:init?Math.random()*H:Math.random()*50,vy:.12+Math.random()*.22,ph:Math.random()*6.28,s:Math.random()<.3?2:1,c:pink[(Math.random()*4)|0],land:90+Math.random()*16});
+for(let i=0;i<170;i++)petals.push(mk(true));
+// ---------- nubes ----------
+const clouds=[{x:6,y:20,s:.6},{x:34,y:30,s:.35},{x:20,y:8,s:.25}];
+const drawCloud=(x,y)=>{x=Math.round(x);R(x+3,y,7,1,'#fff');R(x+1,y+1,13,1,'#fff');R(x,y+2,17,1,'#fff');R(x+1,y+3,15,1,'#dbeefc');};
+// ---------- viento y bucle ----------
+let wind=1,boost=0,t=0;
+function gust(){boost=1}
+document.getElementById('gust').onclick=gust;cv.onclick=gust;
+function frame(){
+ t+=.016;boost*=.985;wind=1+boost*2.2;
+ ctx.drawImage(bg,0,0);
+ // nubes
+ clouds.forEach(c=>{c.x+=c.s*.04*(1+boost);if(c.x>W+10)c.x=-20;drawCloud(c.x,Math.round(c.y))});
+ ctx.drawImage(bg,0,38,100,20,0,38,100,20); // reponer Fuji sobre nubes
+ // copa con balanceo
+ for(const p of bl){
+  const amp=Math.max(.2,Math.min(1,(80-p.y)/60))*1.5*wind;
+  const dx=Math.round(Math.sin(t*1.3+p.ph*.3+p.y*.06)*amp),dy=Math.round(Math.sin(t*1.7+p.x*.08)*amp*.5);
+  let ci=p.ci; if(Math.sin(t*2.2+p.ph*5)>.985)ci=3;
+  R(p.x+dx,p.y+dy,1,1,pink[ci]);}
+ for(const q of carpet)R(q.x,q.y,1,1,q.c);
+ // pétalos
+ for(const p of petals){
+  p.y+=p.vy*(1+boost);p.x-= -.02-Math.sin(t+p.ph)*.12-boost*.5;
+  if(p.y>=p.land&&p.x>0&&p.x<W){carpet.push({x:Math.round(p.x),y:Math.round(p.y),c:p.c});if(carpet.length>900)carpet.shift();Object.assign(p,mk(false))}else if(p.x<-3||p.x>W+3){Object.assign(p,mk(false));if(boost>.3){p.x=190}}
+  R(Math.round(p.x),Math.round(p.y),p.s,p.s,p.c);}
+ requestAnimationFrame(frame)}
+frame();
+// ---------- música chiptune ----------
+let ac,timer,step=0,on=false;
+const mel=[659,784,880,784,659,587,523,587,659,784,659,587,523,440,523,587];
+const bass=[262,262,196,196,220,220,175,175];
+function tone(f,d,type,v){const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(v,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d);o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+d)}
+const mb=document.getElementById('mus');
+const SONG='musica.mp3';let au; // pega aquí tu canción como data:audio/mpeg;base64,...
+mb.onclick=()=>{
+ if(SONG){au=au||Object.assign(new Audio(SONG),{loop:true});on?au.pause():au.play();on=!on;mb.textContent=on?'♪ MÚSICA: SÍ':'♪ MÚSICA: NO';return}
+ try{
+  if(!on){ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume();
+   timer=setInterval(()=>{tone(mel[step%16],.22,'square',.05);if(step%2===0)tone(bass[(step>>1)%8],.4,'triangle',.08);step++},240);on=true;mb.textContent='♪ MÚSICA: SÍ'}
+  else{clearInterval(timer);on=false;mb.textContent='♪ MÚSICA: NO'}
+ }catch(e){}
+};
+// ---------- pantalla de título ----------
+(function(){const ic=document.getElementById('ic'),g=ic.getContext('2d'),w=96,h=54,intro=document.getElementById('intro');let run=true;
+const bands=['#2f9fe6','#46aeea','#62bdee','#80cdf2','#9ad9f5','#b5e6f8'];
+const st=[{x:6,y:8,s:.02},{x:58,y:16,s:.015},{x:30,y:3,s:.01}],pe=[];
+for(let i=0;i<30;i++)pe.push({x:Math.random()*w,y:Math.random()*h,v:.08+Math.random()*.15,p:Math.random()*6});
+const flor=[' pp pp ','pwwwwwp','pwwywwp',' wyyyw ','pwwywwp',' pwwwp ','  ppp  '],fc={p:'#ff82b0',w:'#ffc9de',y:'#ffe27a'};
+function d(t){if(!run)return;
+ for(let y=0;y<h;y++){const k=y/h*6,i=Math.min(5,Math.floor(k)),f=k-i;g.fillStyle=bands[i];g.fillRect(0,y,w,1);if(f>.6&&i<5){g.fillStyle=bands[i+1];for(let x=y%2;x<w;x+=2)g.fillRect(x,y,1,1)}}
+ for(const s of st){s.x+=s.s;if(s.x>w)s.x=-17;const x=Math.round(s.x),y=s.y;g.fillStyle='#fff';g.fillRect(x+3,y,7,1);g.fillRect(x+1,y+1,13,1);g.fillRect(x,y+2,17,1);g.fillStyle='#dbeefc';g.fillRect(x+1,y+3,15,1)}
+ for(let x=0;x<w;x++){const tp=Math.floor(28+Math.abs(x-30)*(x<30?.5:.38));g.fillStyle=x<30?'#5a7fae':'#6d8fb8';g.fillRect(x,tp,1,h-tp);g.fillStyle='#fff';g.fillRect(x,tp,1,Math.max(0,9-Math.floor(Math.abs(x-30)*.4)))}
+ for(let y=46;y<h;y++)for(let x=0;x<w;x++){g.fillStyle=(x+y)%2?'#8fdc5a':'#a8e86c';g.fillRect(x,y,1,1)}
+ const bob=Math.round(Math.sin(t/300)*1);
+ 
+ for(const p of pe){p.y+=p.v;p.x+=Math.sin(t/600+p.p)*.12;if(p.y>h){p.y=-2;p.x=Math.random()*w}g.fillStyle='#ffb6d3';g.fillRect(Math.round(p.x),Math.round(p.y),1,1)}
+ requestAnimationFrame(d)}
+requestAnimationFrame(d);
+document.getElementById('go').addEventListener('click',()=>{run=false});
+})();
+</script>
+</body>
+</html>
